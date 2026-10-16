@@ -34,17 +34,14 @@ cd intents-contract
 # Output: res/intents_contract.wasm (244KB)
 ```
 
-## Step 2: Push WASI Code to GitHub
+## Step 2: Publish the WASI Binary
 
-OutLayer compiles code from GitHub repositories. Push your WASI code:
+Upload the built WASM and deploy it as an OutLayer project:
 
 ```bash
-# Create new repo or use existing
-git init
-git add .
-git commit -m "Initial commit: NEAR Intents swap WASI"
-git remote add origin https://github.com/YOUR_USERNAME/intents-example
-git push -u origin main
+outlayer upload target/wasm32-wasip2/release/intents-example.wasm
+# prints SHA256 and: FastFS URL: https://main.fastfs.io/your-account.near/outlayer.near/<sha256>.wasm
+outlayer deploy intents-swap <FastFS URL>
 ```
 
 **Important**: Update the `WASI_PROJECT_ID` constant in `intents-contract/src/lib.rs`:
@@ -53,9 +50,7 @@ git push -u origin main
 const WASI_PROJECT_ID: &str = "your-account.near/intents-swap";
 ```
 
-The contract resolves the WASM through an **OutLayer project**, not through a GitHub URL, so this
-is a project id (`owner/name`) and it does not change when the repository is renamed or forked.
-Create the project in the dashboard and upload the built WASM to it; the contract then always runs
+The contract resolves the WASM through this **OutLayer project** (`owner/name`) and always runs
 the project's active version.
 
 Rebuild the contract after changing the constant.
@@ -69,8 +64,7 @@ The operator account needs to sign NEAR Intents transactions. Store the private 
 1. Open http://localhost:3000/secrets (or your OutLayer dashboard URL)
 2. Connect wallet
 3. Fill in the form:
-   - **Project**: `your-account.near/intents-swap` — bind to the project, not the repository,
-     so the secrets keep resolving if the repo is renamed or forked
+   - **Project**: `your-account.near/intents-swap`
    - **Profile**: `production`
    - **Secrets JSON**:
      ```json
@@ -186,7 +180,7 @@ near tx-status YOUR_TX_HASH --accountId user.testnet
 Expected flow:
 1. User transfers tokens → swap contract
 2. Swap contract calls `request_execution` → OutLayer
-3. OutLayer worker compiles WASI binary from GitHub
+3. OutLayer worker fetches the project's active WASM and checks its sha256
 4. OutLayer worker executes WASI with decrypted secrets
 5. WASI makes HTTP requests to NEAR Intents API
 6. WASI returns result to OutLayer
@@ -209,7 +203,7 @@ near view intents-swap.testnet is_token_whitelisted '{"token_id":"wrap.near"}'
 **Cause**: Secrets not stored or wrong profile/account.
 
 **Solution**:
-- Check secrets are stored: `near view outlayer.near secrets_exist '{"repo":"github.com/...","branch":"main","profile":"production"}'`
+- Check secrets are stored: `near view outlayer.near secrets_exist '{"accessor":{"Project":{"project_id":"your-account.near/intents-swap"}},"profile":"production","owner":"operator.testnet"}'`
 - Verify `operator_id` matches account in secrets
 - Verify `secrets_profile` matches profile name
 
@@ -231,14 +225,14 @@ near view intents-swap.testnet is_token_whitelisted '{"token_id":"wrap.near"}'
 - Check NEAR Intents platform status
 - Reduce swap size
 
-### 5. "Compilation failed" or "OutLayer execution failed"
+### 5. "OutLayer execution failed"
 
-**Cause**: the project has no active version, or the WASI binary failed to compile.
+**Cause**: the project has no active version, or the WASI binary failed.
 
 **Solution**:
 - Verify `WASI_PROJECT_ID` in the contract matches an existing project with an active version
 - Check the project in the dashboard: a project with no uploaded version has nothing to run
-- Test compilation locally: `cargo build --target wasm32-wasip2 --release`
+- Test the build locally: `cargo build --target wasm32-wasip2 --release`
 - Check OutLayer worker logs
 
 ## Monitoring
@@ -300,11 +294,11 @@ To update the WASI binary logic:
 
 1. Make changes to `src/main.rs` or `src/crypto.rs`
 2. Rebuild: `./build.sh`
-3. Upload the new WASM as a version of the project and make it active
+3. `outlayer upload` the new WASM, then `outlayer deploy intents-swap <FastFS URL>` — it adds a version and makes it active
 4. The contract picks up the active version on the next swap
 
 **Note**: No need to redeploy the contract if only WASI code changed — that is the point of
-going through a project rather than pinning a commit.
+going through a project rather than pinning a WASM hash.
 
 ## Support
 

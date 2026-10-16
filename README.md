@@ -11,7 +11,7 @@ User → ft_transfer_call → Intents Contract
                               ↓
                     request_execution → outlayer.near
                               ↓
-                    OutLayer Worker (compiles + runs WASI)
+                    OutLayer Worker (runs the project's WASI)
                               ↓
                         WASI Binary (Rust + HTTP)
                     1. Get quote from NEAR Intents API
@@ -69,27 +69,18 @@ cd intents-contract
 
 ## Deployment
 
-### 1. Store Operator Secrets
+### 1. Publish the WASI Binary and Store Operator Secrets
 
-Store the operator's private key in OutLayer secrets:
+Deploy the WASM as the project the contract names in `WASI_PROJECT_ID`, then store the
+operator's private key in OutLayer secrets under that project:
 
 ```bash
-# Using dashboard (http://localhost:3000/secrets)
-# Or via contract call:
+outlayer upload target/wasm32-wasip2/release/intents-example.wasm
+outlayer deploy intents-swap <FastFS URL printed by upload>
 
-near call outlayer.near store_secrets '{
-  "repo": "github.com/out-layer/intents-example",
-  "branch": "main",
-  "profile": "production",
-  "encrypted_secrets": [1,2,3,...],  # Encrypted JSON
-  "access_condition": {"AllowAll": {}}
-}' --accountId operator.testnet --deposit 0.1
-
-# Encrypted JSON format:
-# {
-#   "OPERATOR_PRIVATE_KEY": "ed25519:...",
-#   "OPERATOR_ACCOUNT_ID": "operator.testnet"
-# }
+# Or the dashboard (http://localhost:3000/secrets)
+outlayer secrets set '{"OPERATOR_PRIVATE_KEY":"ed25519:...","OPERATOR_ACCOUNT_ID":"operator.testnet"}' \
+  --project your-account.near/intents-swap --profile production
 ```
 
 ### 2. Deploy Contract
@@ -143,7 +134,7 @@ near call wrap.near ft_transfer_call '{
 }' --accountId user.testnet --depositYocto 1 --gas 300000000000000
 
 # Contract will:
-# 1. Call OutLayer with WASI repo
+# 1. Call OutLayer with the WASI project (WASI_PROJECT_ID)
 # 2. WASI binary executes swap via NEAR Intents
 # 3. Callback transfers output tokens to user
 ```

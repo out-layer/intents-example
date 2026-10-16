@@ -42,7 +42,7 @@ This document describes critical implementation details and common pitfalls when
 ┌─────────────────────────────────────────────────────────────────┐
 │ 4. Worker (event monitor):                                      │
 │    - Filters: contract_id == outlayer.near ✅ CRITICAL         │
-│    - Compiles WASI (intents-example)                                │
+│    - Fetches the project's WASM (intents-example)             │
 │    - Executes with secrets (SWAP_CONTRACT_PRIVATE_KEY)          │
 └─────────────────────────────────────────────────────────────────┘
                             ↓

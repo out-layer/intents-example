@@ -28,11 +28,9 @@ const MIN_DEPOSIT: u128 = 50_000_000_000_000_000_000_000; // 0.05 NEAR
 /// OutLayer contract ID
 const OUTLAYER_CONTRACT_ID: &str = "outlayer.near";
 
-/// OutLayer project that provides the WASI binary. Using a project instead of a GitHub
-/// repo+branch means the executed code is the version registered on-chain (the project's
-/// `active_version`), so publishing a new version is an explicit, auditable action rather
-/// than whatever happens to sit on a branch — and it cannot be served from a stale build
-/// cache keyed on a branch name.
+/// OutLayer project that provides the WASI binary. The executed code is the version
+/// registered on-chain (the project's `active_version`, a wasm named by its sha256), so
+/// publishing a new version is an explicit, auditable action.
 const WASI_PROJECT_ID: &str = "v1.publishintent.near/intents-swap";
 
 /// Slippage tolerance (basis points, 100 = 1%) used when the swap message omits one.
